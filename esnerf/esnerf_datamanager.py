@@ -65,6 +65,7 @@ from nerfstudio.data.pixel_samplers import (
     PatchPixelSamplerConfig,
 )
 from nerfstudio.cameras.cameras import CameraType
+from nerfstudio.data.datasets.semantic_dataset import SemanticDataset
 #####################################################
 
 @dataclass
@@ -90,8 +91,8 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
     """
 
     config: ESNerfDataManagerConfig
-    train_dataset: TDataset
-    eval_dataset: TDataset
+    train_dataset_s: TDataset
+    eval_dataset_s: TDataset
     train_dataparser_outputs: DataparserOutputs
 
 
@@ -107,10 +108,12 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
         super().__init__(
             config=config, device=device, test_mode=test_mode, world_size=world_size, local_rank=local_rank, **kwargs,
         )
-        self.train_dataset = self.create_train_dataset()
-        self.eval_dataset = self.create_eval_dataset()
+        self.train_dataset_s = self.create_train_dataset()
+        # print(self.train_dataset_s)
+        self.eval_dataset_s = self.create_eval_dataset()
+        self.setup_train()
+        
 
-       
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         param = super().get_param_groups()
         return param
@@ -119,15 +122,14 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
     def dataset_type(self) -> Type[TDataset]:
         """Returns the dataset type passed as the generic argument"""
         default: Type[TDataset] = cast(TDataset, TDataset.__default__)  # type: ignore
-        orig_class: Type[VanillaDataManager] = get_orig_class(self, default=None)  # type: ignore
-        if type(self) is VanillaDataManager and orig_class is None:
+        orig_class: Type[ESNerfDataManager] = get_orig_class(self, default=None)  # type: ignore
+        if type(self) is ESNerfDataManager and orig_class is None:
             return default
-        if orig_class is not None and get_origin(orig_class) is VanillaDataManager:
+        if orig_class is not None and get_origin(orig_class) is ESNerfDataManager:
             return get_args(orig_class)[0]
-
         # For inherited classes, we need to find the correct type to instantiate
         for base in getattr(self, "__orig_bases__", []):
-            if get_origin(base) is VanillaDataManager:
+            if get_origin(base) is ESNerfDataManager:
                 for value in get_args(base):
                     if isinstance(value, ForwardRef):
                         if value.__forward_evaluated__:
@@ -142,6 +144,7 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 
     def create_train_dataset(self) -> TDataset:
         """Sets up the data loaders for training"""
+        print(self.dataparser_outputs)
         return self.dataset_type(
             dataparser_outputs=self.train_dataparser_outputs,
             scale_factor=self.config.camera_res_scale_factor,
@@ -151,10 +154,10 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
     def setup_train(self):
         assert self.train_dataset is not None
         CONSOLE.print("Setting up training dataset...")
-        # print("///////////////////////////////////")
-        # print(self.train_dataset)
-        # print("///////////////////////////////////")
-        # print(batch)
+        train_dataset_s = self.create_train_dataset()
+        
+
+
         self.train_image_dataloader = CacheDataloader(
             self.train_dataset,
             num_images_to_sample_from=self.config.train_num_images_to_sample_from,
@@ -165,15 +168,42 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
             collate_fn=self.config.collate_fn,
             exclude_batch_keys_from_device=self.exclude_batch_keys_from_device,
         )
+
+        
+
+        self.train_image_dataloader_s = CacheDataloader(
+            train_dataset_s,
+            num_images_to_sample_from=self.config.train_num_images_to_sample_from,
+            num_times_to_repeat_images=self.config.train_num_times_to_repeat_images,
+            device=self.device,
+            num_workers=self.world_size * 4,
+            pin_memory=True,
+            collate_fn=self.config.collate_fn,
+            exclude_batch_keys_from_device=self.exclude_batch_keys_from_device,
+        )
         self.iter_train_image_dataloader = iter(self.train_image_dataloader)
-        # for item in self.iter_train_image_dataloader:
-        #     print(item)
         self.train_camera_optimizer = self.config.camera_optimizer.setup(
             num_cameras=self.train_dataset.cameras.size, device=self.device
         )
         self.train_pixel_sampler = self._get_pixel_sampler(self.train_dataset, self.config.train_num_rays_per_batch)
         self.train_ray_generator = RayGenerator(self.train_dataset.cameras.to(self.device), self.train_camera_optimizer,)
-        # print(batch)
+        # print("45645645646544564546464566454656")
+        # print(self.train_dataset)
+        # print("45645645646544564546464566454656")
+        # print(self.train_camera_optimizer)
+        # flag = 1
+        # assert flag != 1
+        
+        
+
+        # semantic有关
+        self.iter_train_image_dataloader_s = iter(self.train_image_dataloader_s)
+        self.train_camera_optimizer = self.config.camera_optimizer.setup(
+            num_cameras=train_dataset_s.cameras.size, device=self.device
+        )
+        self.train_pixel_sampler_s = self._get_pixel_sampler(train_dataset_s, self.config.train_num_rays_per_batch)
+        self.train_ray_generator_s = RayGenerator(train_dataset_s.cameras.to(self.device), self.train_camera_optimizer,)
+
 
          # 下面是对射线的处理
         cams = self.train_dataset.cameras
@@ -199,10 +229,13 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
         self.neg_thre = torch.ones((170, 540, 960), device=self.device)
 
         # 用于产生batch的sampler
+        
         self.event_sampler = ESNerfSampler(self.train_dataparser_outputs.metadata["event_files"]["event_files"][0], pos_thre=self.pos_thre, 
                                           neg_thre=self.neg_thre, device=self.device, batch_size=self.get_train_rays_per_batch(),
                                           neg_ratio=self.config.neg_ratio, max_winsize=self.config.max_winsize)
         self.event_iter = iter(self.event_sampler)
+
+        
         
         
 
@@ -219,25 +252,33 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
         elif self.train_count == 170:    # 图像总数-1
             self.event_sampler.sample_method = "sample_1d"
             self.event_sampler.neg_ratio = 0.2
+            
+
+        image_batch_s = next(self.iter_train_image_dataloader_s)
+        assert self.train_pixel_sampler_s is not None
+        assert isinstance(image_batch_s, dict)
+        batch_s = self.train_pixel_sampler_s.sample(image_batch_s)
         
         
-
-        image_batch = next(self.iter_train_image_dataloader)
-        assert self.train_pixel_sampler is not None
-        assert isinstance(image_batch, dict)
-        batch = self.train_pixel_sampler.sample(image_batch)
-
-        
-
-        semantics = batch["semantics"]
-        mask = batch["mask"]
         ray_indices, batch = next(self.event_iter)
+        # print(ray_indices)
+        
+
         batch["image"] = self.images[ray_indices[:, 0], ray_indices[:, 1], ray_indices[:, 2]]
+        ray_bundle = self.train_ray_generator(ray_indices)
+        # print("123123123131212123")
+        # print(ray_bundle)
+        
+
+        # flag = 1
+        # assert flag != 1
+
+        semantics = batch_s["semantics"]
+        mask = batch_s["mask"]
         batch["semantics"] = semantics
         batch["mask"] = mask
-        ray_bundle = self.train_ray_generator(ray_indices)
 
-        # print(batch)
+    
         return ray_bundle, batch
     
 
@@ -285,7 +326,9 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 if __name__ == "__main__":
 
     cfg = ESNerfDataManagerConfig()
-    data_manager = cfg.setup(device="cuda:0")
+    data_manager = cfg.setup(device="cuda:0",
+                              ) #_target=VanillaDataManager[SemanticDataset],
+    data_manager.setup_train()
     ray, batch = data_manager.next_train(1)
-    print(batch)
+    # print(batch)
     

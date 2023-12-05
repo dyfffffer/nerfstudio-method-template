@@ -264,6 +264,7 @@ class ESNerfSampler:
         event_frame = event_frame[..., None].tile(1, 3) * color_mask
         batch = {"event_frame_selected" : event_frame,
                  "color_mask" : color_mask}
+
         return ray_indices, batch
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ from nerfstudio.data.dataparsers.base_dataparser import Semantics
 class ESNerfDataParserConfig(DataParserConfig):
 
     _target: Type = field(default_factory=lambda: ESNerfDataParser)
-    data: Path = Path("/home/dengyufei/DATA/apartment")
+    data: Path = Path("/home/dengyufei/DATA/room")
 
     # dyfwhether or not to include loading of semantics data
     include_semantics: bool = True
@@ -87,8 +87,8 @@ class ESNerfDataParser(DataParser):
         dir_path = self.config.data / f"{split}"
 
         #rgb的宽和高 
-        Height = 540
-        Width = 960
+        Height = 960 # 540 480
+        Width = 960 #960 640
 
         # event files
         enames = self.__find_files(dir_path / "events", ["*.npz"])
@@ -96,7 +96,7 @@ class ESNerfDataParser(DataParser):
         event_files = {"event_files": enames}
 
         # rgb files
-        image_filenames = self.__find_files(dir_path / "rgb", ["*.jpg"])
+        image_filenames = self.__find_files(dir_path / "rgb", ["*.png"])
         fnames = []
         for filepath in image_filenames:
             fnames.append(Path(filepath).name)
@@ -190,15 +190,15 @@ class ESNerfDataParser(DataParser):
         if self.config.include_semantics:
             empty_path = Path()
             replace_this_path = str(empty_path / "rgb" / empty_path)
-            with_this_path = str(empty_path / "segmentations" / "thing" / empty_path)
+            with_this_path = str(empty_path / "semantic_class" / empty_path)
             filenames = [
-                Path(str(image_filename).replace(replace_this_path, with_this_path).replace(".jpg", ".png"))
+                Path(str(image_filename).replace('rgb', 'semantic_class'))
                 for image_filename in image_filenames
             ]
-            panoptic_classes = load_from_json(self.config.data / "panoptic_classes.json")
-            classes = panoptic_classes["thing"]
-            colors = torch.tensor(panoptic_classes["thing_colors"], dtype=torch.float32) / 255.0
-            semantics = Semantics(filenames=filenames, classes=classes, colors=colors, mask_classes=["person"])
+            panoptic_classes = load_from_json(self.config.data / "semantic.json")
+            classes = panoptic_classes["classes"]
+            colors = torch.tensor(panoptic_classes["colors"], dtype=torch.float32) / 255.0
+            semantics = Semantics(filenames=filenames, colors=colors, classes=classes) #, colors=colors , mask_classes=["person"]
 
         cameras = Cameras(
             camera_to_worlds=poses[:, :3, :4], 
@@ -242,4 +242,4 @@ if __name__ == "__main__":
     config = ESNerfDataParserConfig()
     parser = config.setup()
     outputs = parser.get_dataparser_outputs()
-    print(outputs.metadata)
+    print(outputs.cameras.fx)

@@ -241,6 +241,8 @@ class ESNerfField(Field):
 
         outputs_shape = ray_samples.frustums.directions.shape[:-1]
 
+
+
         # appearance
         if self.training:
             embedded_appearance = self.embedding_appearance(camera_indices)
@@ -265,6 +267,9 @@ class ESNerfField(Field):
                 dim=-1,
             )
             x = self.mlp_transient(transient_input).view(*outputs_shape, -1).to(directions)
+            print(x)
+            flag = 1 
+            assert flag != 1
             outputs[FieldHeadNames.UNCERTAINTY] = self.field_head_transient_uncertainty(x)
             outputs[FieldHeadNames.TRANSIENT_RGB] = self.field_head_transient_rgb(x)
             outputs[FieldHeadNames.TRANSIENT_DENSITY] = self.field_head_transient_density(x)
@@ -300,3 +305,27 @@ class ESNerfField(Field):
         outputs.update({FieldHeadNames.RGB: rgb})
 
         return outputs
+    # def get_outputs(
+    #     self, ray_samples: RaySamples, density_embedding: Optional[Tensor] = None
+    # ) -> Dict[FieldHeadNames, Tensor]:
+    #     assert density_embedding is not None
+    #     outputs = {}
+    #     directions = get_normalized_directions(ray_samples.frustums.directions)
+    #     directions_flat = directions.view(-1, 3)
+    #     d = self.direction_encoding(directions_flat)
+
+    #     outputs_shape = ray_samples.frustums.directions.shape[:-1]
+
+    #     h = torch.cat(
+    #         [
+    #             d, 
+    #             density_embedding.view(-1, self.geo_feat_dim),
+    #         ],
+    #         dim = -1,
+    #     )
+    #     rgb = self.mlp_head(h).view(*outputs_shape, -1).to(directions)
+    #     outputs.update({FieldHeadNames.RGB: rgb})
+
+    #     return outputs
+    # 23
+    # 2
