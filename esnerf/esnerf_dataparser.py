@@ -87,8 +87,8 @@ class ESNerfDataParser(DataParser):
         dir_path = self.config.data / f"{split}"
 
         #rgb的宽和高 
-        Height = 960 # 540 480
-        Width = 960 #960 640
+        Height = 480 # 540 480
+        Width = 640 #960 640
 
         # event files
         enames = self.__find_files(dir_path / "events", ["*.npz"])

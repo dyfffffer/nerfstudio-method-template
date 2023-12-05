@@ -218,8 +218,8 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
             images[image_idx[i]] = image[i]
         self.images = images
 
-        self.pos_thre = torch.ones((170, 540, 960), device=self.device)
-        self.neg_thre = torch.ones((170, 540, 960), device=self.device)
+        self.pos_thre = torch.ones((899, 480, 640), device=self.device)
+        self.neg_thre = torch.ones((899, 480, 640), device=self.device)
 
         # 用于产生batch的sampler
         
@@ -242,7 +242,7 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 
         if self.train_count == 1:
             self.event_sampler.sample_method = "sample_3d"
-        elif self.train_count == 170:    # 图像总数-1
+        elif self.train_count == 899:    # 图像总数-1
             self.event_sampler.sample_method = "sample_1d"
             self.event_sampler.neg_ratio = 0.2
             

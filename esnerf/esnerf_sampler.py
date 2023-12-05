@@ -24,7 +24,7 @@ def accumulate_events(xs, ys, ts, ps, pos_frames, neg_frames):
         else:
             neg_frames[int(t // t_slice), y, x] -= 1
 
-def event_split(file_path: Path, cam_cnt=171, h=540, w=960):  # cam_cnt是图片个数，在下面的Init也要改
+def event_split(file_path: Path, cam_cnt=900, h=480, w=640):  # cam_cnt是图片个数，在下面的Init也要改
     """split event stream and accumulate events"""
     file_path = Path(file_path)
     events = np.load(file_path)
@@ -87,7 +87,7 @@ class ESNerfSampler:
     """Event sampler from accumulation frames"""
     sample_method : Literal["sample_ordered", "sample_1d", "sample_2d", "sample_3d"] = "sample_3d"
 
-    def __init__(self, file_path: Path, pos_thre: Tensor, neg_thre: Tensor, cam_cnt=171, h=540, w=960, 
+    def __init__(self, file_path: Path, pos_thre: Tensor, neg_thre: Tensor, cam_cnt=900, h=480, w=640, 
                  neg_ratio=0.1, max_winsize=1001, batch_size=1024, device="cuda:0"):
         if file_path == "":  # only test
             self.pos_frames, self.neg_frames = 2 * torch.ones((cam_cnt-1, h, w)), -1 * torch.ones((cam_cnt-1, h, w))
