@@ -174,10 +174,10 @@ class ESNerfDataParser(DataParser):
 
         # intrinsic files
         intrinsic_files = self.__find_files(dir_path/"intrinsics", ["*.txt"])
-        intrinsic = Tensor(self.__parse_txt(intrinsic_files[0], (-1, 3)))
+        intrinsic = Tensor(self.__parse_txt(intrinsic_files[0], (-1, 4)))
         fx = intrinsic[0][0].clone()
         fy = intrinsic[1][1].clone()
-        cx = intrinsic[0][2].clone()
+        cx = intrinsic[0][2].clone()  
         cy = intrinsic[1][2].clone()
         distortion_params = torch.zeros(6)
         if intrinsic.shape[0] == 5:

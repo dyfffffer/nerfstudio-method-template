@@ -144,7 +144,7 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 
     def create_train_dataset(self) -> TDataset:
         """Sets up the data loaders for training"""
-        print(self.dataparser_outputs)
+        # print(self.dataparser_outputs)
         return self.dataset_type(
             dataparser_outputs=self.train_dataparser_outputs,
             scale_factor=self.config.camera_res_scale_factor,
@@ -187,13 +187,6 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
         )
         self.train_pixel_sampler = self._get_pixel_sampler(self.train_dataset, self.config.train_num_rays_per_batch)
         self.train_ray_generator = RayGenerator(self.train_dataset.cameras.to(self.device), self.train_camera_optimizer,)
-        # print("45645645646544564546464566454656")
-        # print(self.train_dataset)
-        # print("45645645646544564546464566454656")
-        # print(self.train_camera_optimizer)
-        # flag = 1
-        # assert flag != 1
-        
         
 
         # semantic有关
@@ -266,12 +259,7 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 
         batch["image"] = self.images[ray_indices[:, 0], ray_indices[:, 1], ray_indices[:, 2]]
         ray_bundle = self.train_ray_generator(ray_indices)
-        # print("123123123131212123")
-        # print(ray_bundle)
-        
 
-        # flag = 1
-        # assert flag != 1
 
         semantics = batch_s["semantics"]
         mask = batch_s["mask"]
