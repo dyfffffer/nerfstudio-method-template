@@ -75,6 +75,10 @@ class ESNerfPipeline(VanillaPipeline):
             num_eval_data=len(self.datamanager.eval_dataset),
             grad_scaler=grad_scaler,
         )
+        # print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+        # print(device)
+        # print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+
         self.model.to(device)
 
         self.world_size = world_size

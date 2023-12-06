@@ -220,6 +220,9 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
 
         self.pos_thre = torch.ones((899, 480, 640), device=self.device)
         self.neg_thre = torch.ones((899, 480, 640), device=self.device)
+        print("///////////////////////////////////////////////////////////")
+        print(self.device)
+        print("///////////////////////////////////////////////////////////")
 
         # 用于产生batch的sampler
         

@@ -32,32 +32,21 @@ def event_split(file_path: Path, cam_cnt=900, h=480, w=640):  # cam_cnt是图片
     ys = np.array(events['y'])
     ts = np.array(events['t'])
     ps = np.array(events['p'])
-    # print("/////////////////////////////////////")
-    # print(events['x'])
-    # print(events['y'])
-    # print(events['t'])
-    # print(events['p'])
-    # print(xs)
-    # print(ys)
-    # print(ts)
-    # print(ps)
-    # print(len(xs),len(ys),len(ts),len(ps))
-    # print(cam_cnt - 1)
-    # print("/////////////////////////////////////")
+
     pos_frames = np.zeros((cam_cnt - 1, h, w))
     neg_frames = np.zeros((cam_cnt - 1, h, w))
     accumulate_events(xs, ys, ts, ps, pos_frames, neg_frames)  #这里在报错
     return torch.Tensor(pos_frames), torch.Tensor(neg_frames)
 
-def event_fusion(pos_frames: Tensor, neg_frames, pos_thre, neg_thre, max_winsize=50, device="cuda:0"):
+def event_fusion(pos_frames: Tensor, neg_frames, pos_thre, neg_thre, max_winsize=50, device="cuda:2"):
 
     event_pos_frames = torch.cumsum(pos_frames, dim=0)
     event_neg_frames = torch.cumsum(neg_frames, dim=0)
 
-    print("//////////////////")
-    print(pos_frames.size(),neg_frames.size())
-    print(pos_thre.size(),neg_thre.size())
-    print("//////////////////")
+    # print("//////////////////")
+    # print(pos_frames.size(),neg_frames.size())
+    # print(pos_thre.size(),neg_thre.size())
+    # print("//////////////////")
 
     fusion_frames = pos_frames * pos_thre + neg_frames * neg_thre  
     # 报错 张量大小不同，前面两个是[170,540,960]，后面两个是[1000,260,346]
@@ -88,7 +77,7 @@ class ESNerfSampler:
     sample_method : Literal["sample_ordered", "sample_1d", "sample_2d", "sample_3d"] = "sample_3d"
 
     def __init__(self, file_path: Path, pos_thre: Tensor, neg_thre: Tensor, cam_cnt=900, h=480, w=640, 
-                 neg_ratio=0.1, max_winsize=1001, batch_size=1024, device="cuda:0"):
+                 neg_ratio=0.1, max_winsize=1001, batch_size=1024, device="cuda:2"):
         if file_path == "":  # only test
             self.pos_frames, self.neg_frames = 2 * torch.ones((cam_cnt-1, h, w)), -1 * torch.ones((cam_cnt-1, h, w))
         else:
@@ -268,8 +257,7 @@ class ESNerfSampler:
         return ray_indices, batch
 
 if __name__ == "__main__":
-    #pos, neg = event_split("/DATA/wyj/EventNeRF/data/lego1/test1/train/events/test_lego1_color.npz")
-    #event_sampler = EventSampler("/DATA/wyj/EventNeRF/data/nextnextgen/bottle/train/events/worgb-2022_11_16_15_46_53.npz", pos_thre, neg_thre, cam_cnt, h, w)
+
     cam_cnt, h, w = 4, 2, 2
     pos_thre = torch.ones((cam_cnt - 1, h, w), device="cuda:0")
     neg_thre = torch.ones((cam_cnt - 1, h, w), device="cuda:0")
@@ -277,7 +265,5 @@ if __name__ == "__main__":
     event_iter = iter(event_sampler)
     batch = next(event_iter)
     batch = next(event_iter)
-    #print(pos[0, :10, :10])
-    #print(pos[50, 120:130, 170:180])
-    #print(neg[0, :10, :10])
+
 
