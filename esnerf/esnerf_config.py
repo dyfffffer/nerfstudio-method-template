@@ -49,7 +49,7 @@ ESNerf = MethodSpecification(
                 _target=ESNerfDataManager[SemanticDataset],
                 dataparser=ESNerfDataParserConfig(),
                 train_num_rays_per_batch=1,
-                eval_num_rays_per_batch=4096,
+                eval_num_rays_per_batch=1,
                 #camera_optimizer=CameraOptimizerConfig(
                 #    mode="SO3xR3",
                 #    #optimizer=RAdamOptimizerConfig(lr=6e-3, eps=1e-8, weight_decay=1e-3),

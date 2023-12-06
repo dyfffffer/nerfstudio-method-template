@@ -111,7 +111,7 @@ class ESNerfDataManager(VanillaDataManager, Generic[TDataset]):
         self.train_dataset_s = self.create_train_dataset()
         # print(self.train_dataset_s)
         self.eval_dataset_s = self.create_eval_dataset()
-        self.setup_train()
+        # self.setup_train()
         
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
