@@ -226,6 +226,7 @@ class ESNerfField(Field):
         # from smaller internal (float16) parameters.
         density = trunc_exp(density_before_activation.to(positions))
         density = density * selector[..., None]
+        
         return density, base_mlp_out
 
     def get_outputs(
