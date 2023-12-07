@@ -51,9 +51,8 @@ class ESNerfDataParserConfig(DataParserConfig):
     scale_factor: float = 1.0
 
     # 对感兴趣的区域缩放多少  semantic设置为2.0
-    #scene_scale: float = 1.0
-    scene_scale: float = 0.35
-    # scene_scale: float = 2.0
+    # scene_scale: float = 1.0
+    scene_scale: float = 1.0
 
     # 用于定向的方法
     orientation_menthod: Literal["pca", "up", "vertical", "none"] = "up"
