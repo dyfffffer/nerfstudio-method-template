@@ -423,6 +423,7 @@ class ESNerfModel(Model):
         )
 
         # semantics colormaps
+        print(outputs["semantics"].shape)
         semantic_labels = torch.argmax(torch.nn.functional.softmax(outputs["semantics"], dim=-1), dim=-1)
         outputs["semantics_colormap"] = self.colormap.to(self.device)[semantic_labels]
         #dyfadd
