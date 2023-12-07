@@ -328,8 +328,6 @@ class ESNerfModel(Model):
 
 
 
-        
-
         field_outputs = self.field(ray_samples)
         field_outputs_2= self.field(ray_samples_2)
 
@@ -367,15 +365,6 @@ class ESNerfModel(Model):
         )[0]
         weights = weights[..., None]
 
-        # print("//////////////////////////??")
-        # print(field_outputs[FieldHeadNames.RGB].size())
-        # print(weights.size())
-        # print(ray_indices.size())
-        # print(num_rays.size())
-        # print("//////////////////////////??")
-
-        # flag = 1
-        # assert flag != 1
 
         rgb = self.renderer_rgb(
             rgb=field_outputs[FieldHeadNames.RGB],
@@ -423,8 +412,10 @@ class ESNerfModel(Model):
         )
 
         # semantics colormaps
-        print(outputs["semantics"].shape)
-        semantic_labels = torch.argmax(torch.nn.functional.softmax(outputs["semantics"], dim=-1), dim=-1)
+        # print(outputs["semantics"].shape)
+        # print((torch.nn.functional.softmax(outputs["semantics"], dim=-1)).shape)
+        softmax_value = torch.nn.functional.softmax(outputs["semantics"], dim=-1)
+        semantic_labels = torch.argmax(softmax_value, dim=-1)
         outputs["semantics_colormap"] = self.colormap.to(self.device)[semantic_labels]
         #dyfadd
 
@@ -494,14 +485,6 @@ class ESNerfModel(Model):
     # 返回loss的字典，用于加和得到最终的loss
     def get_loss_dict(self, outputs, batch, metric_dict=None):
         image = batch["image"][..., :3].to(self.device)
-        print(outputs["rgb"])
-        print('////////////////////////')
-        print(outputs["accumulation"].shape)
-        print('////////////////////////')
-        print(image.shape)
-        print('////////////////////////')
-        assert 0
-
 
         pred_rgb, image = self.renderer_rgb.blend_background_for_loss_computation(
             pred_image=outputs["rgb"],
